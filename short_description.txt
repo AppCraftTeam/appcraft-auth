@@ -1,0 +1,1 @@
+Appcraft Auth is a Django app to handle all commune use cases for social auth.
