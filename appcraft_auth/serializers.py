@@ -7,7 +7,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.errors.exceptions import CustomAPIException
-from appcraft_auth.models import BlackListedTokenModel
+from appcraft_auth.models import BlackListedTokenModel, AuthLetterModel
+
+
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class AuthLetterSerializer(serializers.ModelSerializer):
+    key = serializers.UUIDField(required=True)
+
+    class Meta:
+        model = AuthLetterModel
+        fields = ['code', 'key']
 
 
 class CustomTokenRefreshSerializer(serializers.Serializer):
