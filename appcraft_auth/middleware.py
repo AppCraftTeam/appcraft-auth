@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.models import BlackListedTokenModel
@@ -17,8 +17,8 @@ class BlacklistedTokensMiddleware:
                 token=access_token,
                 type=BlackListedTokenModel.Type.access.value
         ).exists():
-            return HttpResponse(
-                content=json.dumps({'detail': 'access token is in black list'}),
+            return JsonResponse(
+                data={'detail': 'access token is in black list'},
                 status=AuthRelatedErrorCodes.ACCESS_TOKEN_IS_IN_BLACK_LIST.value
             )
 

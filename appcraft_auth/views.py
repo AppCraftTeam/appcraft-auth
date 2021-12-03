@@ -17,7 +17,7 @@ class TestAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         data = {}
-        tokens = RefreshToken.for_user(user=get_user_model().objects.get(id=1))
+        tokens = RefreshToken.for_user(user=get_user_model().objects.first())
         data['access_token'] = str(tokens.access_token)
         data['refresh_token'] = str(tokens)
         return Response(data)
