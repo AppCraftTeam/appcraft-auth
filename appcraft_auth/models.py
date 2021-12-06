@@ -1,3 +1,4 @@
+import json
 from random import randint
 from uuid import uuid4
 
@@ -159,8 +160,11 @@ class SmsModel(BaseModel):
         response = requests.get(
             'https://%s:%s@gate.smsaero.ru/v2/sms/send?number=%s&text=%s&sign=SMS Aero&channel=INFO' % (
                 settings.SMS_AERO_EMAIL, settings.SMS_AERO_API_KEY, self.phone, self.code))
-
-        print(response.content)
+        if not response.status_code == 200:
+            raise CustomAPIException(
+                error=AuthRelatedErrorCodes.FAILED_SEND_SMS,
+                text=json.loads(response.content).get('message')
+            )
 
     def __str__(self):
         return 'Телефон: %s, СМС: %s' % (self.phone, self.code)

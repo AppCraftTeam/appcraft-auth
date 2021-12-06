@@ -30,7 +30,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'appcraft_auth',
-    'app_users'
+    'app_users',
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -158,3 +159,30 @@ SMS_AERO_EMAIL = os.getenv('SMS_AERO_EMAIL')
 SMS_AERO_API_KEY = os.getenv('SMS_AERO_API_KEY')
 
 AUTH_USER_MODEL = 'app_users.AuthUserModel'
+
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
+
+SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email', 'phone']
+SOCIAL_AUTH_EXTRA_DATA = ['sex', 'email', 'phone']
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'checkout'
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.vk.VKOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+API_VERSION = '5.81'
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    # custom pipelines
+    'appcraft_auth.social_auth.pipelines.do_auth',
+)
+
+SILENCED_SYSTEM_CHECKS = [
+    'urls.W002',
+]

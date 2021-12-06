@@ -4,11 +4,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from social_core.exceptions import AuthTokenRevoked
+from social_django.utils import load_backend, load_strategy
 
 from appcraft_auth.base.api_views import BaseAuthAPIView
+from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
+from appcraft_auth.errors.exceptions import CustomAPIException
 from appcraft_auth.models import BlackListedTokenModel, AuthLetterModel, SmsModel
 from appcraft_auth.serializers import RefreshTokenSerializer, EmailSerializer, AuthLetterSerializer, PhoneSerializer, \
-    CheckSmsSerializer
+    CheckSmsSerializer, VKTokenSerializer
 from appcraft_auth.utils.request_utils import get_access_token
 
 
@@ -55,7 +59,7 @@ class SendSMSAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            sms_model = SmsModel.create(serializer.data['phone'])
+            sms_model = SmsModel.create(**serializer.validated_data)
             sms_model.send_sms()
             return JsonResponse({'key': sms_model.key})
 
@@ -70,6 +74,18 @@ class AuthBySMSCodeAPIView(APIView):
             sms_model = SmsModel.check_sms(**serializer.validated_data)
             user, created = get_user_model().objects.get_or_create_by_phone(sms_model_instance=sms_model)
             return Response(user.get_auth_data(created=created))
+
+
+class VkAuthAPIView(BaseAuthAPIView):
+    @staticmethod
+    def post(request, *args, **kwargs):
+        serializer = VKTokenSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            backend = load_backend(load_strategy(request), 'vk-oauth2', 'social/login')
+            try:
+                return backend.do_auth(**serializer.validated_data)
+            except AuthTokenRevoked:
+                raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_VK_ACCESS_TOKEN)
 
 
 class LogOutAPIView(APIView):

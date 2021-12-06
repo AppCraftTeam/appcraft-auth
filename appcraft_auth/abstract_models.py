@@ -22,13 +22,18 @@ class BaseModel(models.Model):
 
 
 class AppCraftAuthUserModel(AbstractUser, BaseModel):
-    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-    username = None
 
-    email = models.EmailField(
-        unique=True
+    # сделано специально так
+    # есть случат, когда через авторизацию по соц-сетям мы не получаем имейл,
+    # поэтому оставляю username, пускай записывается значение по умолчанию
+    username = models.CharField(
+        max_length=50,
+        unique=True,
+        default=uuid4
     )
+
+    email = models.EmailField()
 
     phone = models.CharField(
         max_length=16,

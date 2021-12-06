@@ -5,8 +5,11 @@ from rest_framework.exceptions import APIException
 
 class CustomAPIException(APIException):
 
-    def __init__(self, error: IntEnum):
+    def __init__(self, error: IntEnum, text=None):
         self.detail, self.status_code = self.convert_enum(error=error)
+        if text:
+            self.detail += f''' : {text}'''
+        print(self.detail)
         super(CustomAPIException, self).__init__(self.detail, self.status_code)
 
     @staticmethod

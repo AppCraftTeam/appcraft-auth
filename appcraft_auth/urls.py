@@ -14,6 +14,9 @@ urlpatterns = [
     path('sms/send', views.SendSMSAPIView.as_view()),
     path('sms', views.AuthBySMSCodeAPIView.as_view()),
 
+    # python-social-auth
+    path('vk', views.VkAuthAPIView.as_view()),
+
     # logging out and token refresh
     path('logout', views.LogOutAPIView.as_view()),
     path('token/refresh', RefreshTokenAPIView.as_view())

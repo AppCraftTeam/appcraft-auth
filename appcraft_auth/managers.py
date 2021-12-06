@@ -8,9 +8,11 @@ from django.db.models import Manager
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
+from rest_framework.exceptions import NotFound
 
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.errors.exceptions import CustomAPIException
+from appcraft_auth.social_auth.utils import map_vk_gender
 from appcraft_auth.utils.int_utils import generate_random_digits
 
 
@@ -147,3 +149,22 @@ class AuthUserModelManager(UserManager):
         instance, created = self.get_or_create(phone=sms_model_instance.phone)
         sms_model_instance.delete()
         return instance, created
+
+    def get_or_create_by_vk(self, social_data: dict):
+        # todo try to get also phone number
+        vk_id = social_data['response']['id']
+        email = social_data['details']['email']
+
+        defaults = {
+            'gender': map_vk_gender(social_data['response'].get('sex'), self.model.Gender),
+            'first_name': social_data.get('response').get('first_name'),
+            'last_name': social_data.get('response').get('last_name')
+        }
+
+        email_exists = bool(email)
+        if email_exists:
+            defaults['vk_id'] = vk_id
+            return self.update_or_create(email=email, defaults=defaults)
+        else:
+            defaults['email'] = email
+            return self.update_or_create(vk_id=vk_id, defaults=defaults)
