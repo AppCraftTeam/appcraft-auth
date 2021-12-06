@@ -154,4 +154,7 @@ EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'appcraft.developer.test.email@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'Appcraft2021')
 
+SMS_AERO_EMAIL = os.getenv('SMS_AERO_EMAIL')
+SMS_AERO_API_KEY = os.getenv('SMS_AERO_API_KEY')
+
 AUTH_USER_MODEL = 'app_users.AuthUserModel'

@@ -1,12 +1,15 @@
+from random import randint
 from uuid import uuid4
 
+import requests
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from appcraft_auth.abstract_models import BaseModel
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.errors.exceptions import CustomAPIException
-from appcraft_auth.managers.auth_letter_model_manager import AuthLetterModelManager
+from appcraft_auth.managers import AuthLetterModelManager
 
 
 class JWTModel(BaseModel):
@@ -31,21 +34,12 @@ class JWTModel(BaseModel):
 
 
 class BlackListedTokenModel(BaseModel):
-    class Type(models.IntegerChoices):
-        access = 0,
-        refresh = 1,
-
-    type = models.PositiveIntegerField(
-        choices=Type.choices
-    )
-
-    token = models.CharField(
-        max_length=255,
-        unique=True
+    access_token = models.CharField(
+        max_length=255
     )
 
     def __str__(self):
-        return self.token
+        return self.access_token
 
     class Meta:
         db_table = 'appcraft_auth__black_listed_tokens'
@@ -112,3 +106,66 @@ class AuthLetterModel(BaseModel):
         db_table = 'appcraft_auth__auth_letters'
         verbose_name = 'Код авторизации по email'
         verbose_name_plural = 'Коды авторизации по email'
+
+
+class SmsModel(BaseModel):
+    class Status(models.IntegerChoices):
+        SENT = 0
+        ACTIVATED = 1
+        CANCELED = 2
+        EXPIRED = 3
+
+    TOKEN_LIFETIME_MINUTE = 3
+
+    phone = models.CharField(max_length=15)
+    code = models.CharField(max_length=8)
+    key = models.CharField(max_length=255)
+    status = models.IntegerField(
+        choices=Status.choices,
+        default=Status.SENT
+    )
+
+    @classmethod
+    def create(cls, phone):
+        code = cls.generate_code(6)
+        cls.objects.filter(phone=phone, status=cls.Status.SENT).update(status=cls.Status.CANCELED)
+        return cls.objects.create(phone=phone, code=code, key=uuid4())
+
+    @classmethod
+    def generate_code(cls, chars_long: int = 6):
+        code = ''
+        for i in range(chars_long):
+            code += str(randint(0, 9))
+        return code
+
+    @classmethod
+    def check_sms(cls, code, key):
+        sms_model = cls.objects.filter(code=code, key=key, status=cls.Status.SENT).last()
+
+        if sms_model is None:
+            raise CustomAPIException(error=AuthRelatedErrorCodes.SMS_INVALID_CODE_OR_KEY)
+
+        if (timezone.now() - sms_model.created_at).seconds >= cls.TOKEN_LIFETIME_MINUTE * 60:
+            sms_model.status = cls.Status.EXPIRED
+            sms_model.save()
+            raise CustomAPIException(error=AuthRelatedErrorCodes.SMS_LIFETIME_EXPIRED)
+
+        sms_model.status = cls.Status.ACTIVATED
+        sms_model.save()
+
+        return sms_model
+
+    def send_sms(self):
+        response = requests.get(
+            'https://%s:%s@gate.smsaero.ru/v2/sms/send?number=%s&text=%s&sign=SMS Aero&channel=INFO' % (
+                settings.SMS_AERO_EMAIL, settings.SMS_AERO_API_KEY, self.phone, self.code))
+
+        print(response.content)
+
+    def __str__(self):
+        return 'Телефон: %s, СМС: %s' % (self.phone, self.code)
+
+    class Meta:
+        db_table = 'appcraft_auth_sms_models'
+        verbose_name = 'SMS'
+        verbose_name_plural = 'SMS'

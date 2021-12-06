@@ -1,8 +1,11 @@
 from datetime import timedelta
 
+import jwt
 from django.conf import settings
+from django.contrib.auth.models import UserManager
 from django.core.mail import EmailMessage
 from django.db.models import Manager
+from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -41,24 +44,23 @@ class AuthLetterModelManager(Manager):
         self.send_email(email=instance.email, code=instance.code)
         return instance
 
-    def send_email(self, email, code):
+    def get_email_body(self, code: int):
         template_name = self.template_name
-        if not template_name:
-            email = EmailMessage(
-                subject=self.auth_letter_subject,
-                body=code,
-                from_email=settings.EMAIL_HOST_USER,
-                to=[email]
-            )
-        else:
-            html_message = render_to_string(self.template_name, context={'code': code})
-            email = EmailMessage(
-                subject=self.auth_letter_subject,
-                body=html_message,
-                from_email=settings.EMAIL_HOST_USER,
-                to=[email]
-            )
-            email.content_subtype = 'html'
+        body = code
+        if template_name:
+            try:
+                body = render_to_string(self.template_name, context={'code': code})
+            except TemplateDoesNotExist:
+                pass
+        return body
+
+    def send_email(self, email, code):
+        email = EmailMessage(
+            subject=self.auth_letter_subject,
+            body=self.get_email_body(code=code),
+            from_email=settings.EMAIL_HOST_USER,
+            to=[email]
+        )
 
         try:
             email.send()
@@ -73,16 +75,6 @@ class AuthLetterModelManager(Manager):
         if queryset.filter(email=email, created_at__range=(self.repeat_interval, now)).exists() or \
                 queryset.filter(created_at__range=(self.max_trials_period, now)).count() > self.max_trials_per_period:
             raise CustomAPIException(error=AuthRelatedErrorCodes.TOO_FREQUENT_ATTEMPTS)
-
-    def check_auth_letter(self, code: str, key: str):
-        try:
-            auth_letter_instance = self.get(key=key)
-            auth_letter_instance.check_trials_count()
-            auth_letter_instance.increment_trials_count()
-            auth_letter_instance.check_code(code=code)
-            return auth_letter_instance
-        except self.model.DoesNotExist:
-            raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_CREDENTIALS)
 
     @property
     def email_auth_settings(self):
@@ -127,3 +119,31 @@ class AuthLetterModelManager(Manager):
     def max_trials_per_period(self):
         max_trials_per_period = self.email_auth_settings.get('MAX_TRIALS_PER_PERIOD')
         return max_trials_per_period if max_trials_per_period else 4
+
+
+class AuthUserModelManager(UserManager):
+    def get_by_refresh_token(self, refresh_token: str):
+        try:
+            user_id = jwt.decode(
+                refresh_token,
+                key=settings.SECRET_KEY,
+                algorithms=['HS256']).get('user_id')
+            try:
+                return self.get(id=user_id)
+            except self.model.DoesNotExist:
+                raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_REFRESH_TOKEN)
+        except (jwt.exceptions.ExpiredSignatureError,
+                jwt.exceptions.InvalidSignatureError,
+                jwt.exceptions.DecodeError):
+            raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_REFRESH_TOKEN)
+
+    def get_or_create_by_auth_letter_instance(self, auth_letter_instance):
+        email = auth_letter_instance.email.lower()
+        instance, created = self.get_or_create(email=email)
+        auth_letter_instance.delete()
+        return instance, created
+
+    def get_or_create_by_phone(self, sms_model_instance):
+        instance, created = self.get_or_create(phone=sms_model_instance.phone)
+        sms_model_instance.delete()
+        return instance, created

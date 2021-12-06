@@ -1,29 +1,30 @@
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from appcraft_auth.base.api_views import BaseAuthAPIView
-from appcraft_auth.models import BlackListedTokenModel, AuthLetterModel
-from appcraft_auth.serializers import CustomTokenRefreshSerializer, EmailSerializer, AuthLetterSerializer
+from appcraft_auth.models import BlackListedTokenModel, AuthLetterModel, SmsModel
+from appcraft_auth.serializers import RefreshTokenSerializer, EmailSerializer, AuthLetterSerializer, PhoneSerializer, \
+    CheckSmsSerializer
 from appcraft_auth.utils.request_utils import get_access_token
 
 
 class TestAPIView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        data = {}
-        tokens = RefreshToken.for_user(user=get_user_model().objects.first())
-        data['access_token'] = str(tokens.access_token)
-        data['refresh_token'] = str(tokens)
-        return Response(data)
+        # data = {}
+        # tokens = RefreshToken.for_user(user=get_user_model().objects.first())
+        # data['access_token'] = str(tokens.access_token)
+        # data['refresh_token'] = str(tokens)
+        return Response('ok')
 
 
-class GenerateAuthCodeAPIView(BaseAuthAPIView):
+class GenerateEmailAuthCodeAPIView(BaseAuthAPIView):
+    permission_classes = [AllowAny]
     serializer_class = EmailSerializer
 
     def post(self, request, *args, **kwargs):
@@ -36,15 +37,39 @@ class GenerateAuthCodeAPIView(BaseAuthAPIView):
             return Response({'key': str(instance.key)})
 
 
-class AuthenticateByCodeAPIView(BaseAuthAPIView):
+class AuthenticateByEmailCodeAPIView(BaseAuthAPIView):
     serializer_class = AuthLetterSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            auth_letter_instance = AuthLetterModel.objects.check_auth_letter(**serializer.validated_data)
-            return Response(data=get_user_model().objects.get_or_create_by_auth_letter_instance(
-                auth_letter_instance=auth_letter_instance))
+            user, created = get_user_model().objects.get_or_create_by_auth_letter_instance(**serializer.validated_data)
+            return Response(user.get_auth_data(created=created))
+
+
+class SendSMSAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = PhoneSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            sms_model = SmsModel.create(serializer.data['phone'])
+            sms_model.send_sms()
+            return JsonResponse({'key': sms_model.key})
+
+
+class AuthBySMSCodeAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = CheckSmsSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            sms_model = SmsModel.check_sms(**serializer.validated_data)
+            user, created = get_user_model().objects.get_or_create_by_phone(sms_model_instance=sms_model)
+            return Response(user.get_auth_data(created=created))
 
 
 class LogOutAPIView(APIView):
@@ -53,12 +78,15 @@ class LogOutAPIView(APIView):
     @staticmethod
     def delete(request, *args, **kwargs):
         access_token = get_access_token(request=request)
-        BlackListedTokenModel.objects.create(
-            type=BlackListedTokenModel.Type.access,
-            token=access_token
-        )
+        BlackListedTokenModel.objects.create(access_token=access_token)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class RefreshTokenAPIView(TokenRefreshView):
-    serializer_class = CustomTokenRefreshSerializer
+class RefreshTokenAPIView(APIView):
+    serializer_class = RefreshTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            user = get_user_model().objects.get_by_refresh_token(**serializer.validated_data)
+            return Response(user.get_access_token(**serializer.validated_data))
