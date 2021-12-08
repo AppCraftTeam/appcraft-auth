@@ -172,6 +172,82 @@ class SmsModel(BaseModel):
         return 'Телефон: %s, СМС: %s' % (self.phone, self.code)
 
     class Meta:
-        db_table = 'appcraft_auth_sms_models'
+        db_table = 'appcraft_auth__sms_models'
         verbose_name = 'SMS'
         verbose_name_plural = 'SMS'
+
+
+class SocialModel(BaseModel):
+    user = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True, null=True
+    )
+
+    class Providers(models.IntegerChoices):
+        GOOGLE = 0
+        APPLE = 1
+        PHONE = 2
+        FACEBOOK = 3
+        WECHAT = 4
+
+    provider = models.PositiveIntegerField(
+        choices=Providers.choices,
+        null=True,
+        blank=True
+    )
+
+    first_name = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    last_name = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    middle_name = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    username = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    phone = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    email = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    firebase_id = models.CharField(
+        max_length=255,
+        blank=False,
+        null=True
+    )
+
+    used_for_registration = models.BooleanField(
+        default=False,
+        verbose_name='Использовался для регистрации'
+    )
+
+    def __str__(self):
+        return f'{self.provider}'
+
+    class Meta:
+        db_table = 'appcraft_auth__socials'
+        verbose_name = 'Способ авторизации пользователя'
+        verbose_name_plural = 'Способы авторизаций пользователей'

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 
-from appcraft_auth.models import JWTModel, BlackListedTokenModel, AuthLetterModel, SmsModel
+from appcraft_auth.models import JWTModel, BlackListedTokenModel, AuthLetterModel, SmsModel, SocialModel
 
 if settings.DEBUG:
     admin.site.register(JWTModel)
@@ -16,3 +16,8 @@ if settings.DEBUG:
     @admin.register(SmsModel)
     class SmsModelAdmin(admin.ModelAdmin):
         list_display = ['id', 'status', 'phone', 'code', 'key']
+
+
+    @admin.register(SocialModel)
+    class SocialModelAdmin(admin.ModelAdmin):
+        list_display = ['id', 'user', 'provider']
