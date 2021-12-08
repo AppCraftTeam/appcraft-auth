@@ -1,5 +1,9 @@
 import string
 
+import requests
+from django.conf import settings
+from firebase_admin import auth as firebase_auth
+from firebase_admin.auth import InvalidIdTokenError
 from rest_framework import serializers
 
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
@@ -48,6 +52,11 @@ class PhoneSerializer(serializers.ModelSerializer):
 
 
 class CheckSmsSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        sms_model = SmsModel.check_sms(**attrs)
+        return {'sms_model_instance': sms_model}
+
     class Meta:
         model = SmsModel
         fields = ['code', 'key']
@@ -59,3 +68,51 @@ class VKTokenSerializer(serializers.Serializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         return {'access_token': attrs.get('vk_access_token')}
+
+
+class FirebaseTokenSerializer(serializers.Serializer):
+    invalid_firebase_token = CustomAPIException(error=AuthRelatedErrorCodes.INVALID_FIREBASE_TOKEN)
+    firebase_token = serializers.CharField()
+
+    def validate_firebase_token(self, value):
+        try:
+            decoded_token = firebase_auth.verify_id_token(value)
+            if decoded_token is None:
+                raise self.invalid_firebase_token
+        except ValueError as e:
+            print(e)
+            raise self.invalid_firebase_token
+        except InvalidIdTokenError as e:
+            print(e)
+            raise self.invalid_firebase_token
+
+        return decoded_token
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        return {
+            'decoded_firebase_token': attrs.get('firebase_token')
+        }
+
+
+class WechatCodeSerializer(serializers.Serializer):
+    wechat_code = serializers.CharField()
+
+    def validate(self, attrs):
+        url = 'https://api.weixin.qq.com/sns/oauth2/access_token'
+
+        query_params = {
+            'appid': settings.WECHAT_APP_ID,
+            'secret': settings.WECHAT_APP_SECRET,
+            'code': attrs['wechat_code'],
+            'grant_type': 'authorization_code'
+        }
+
+        response = requests.get(
+            url=url,
+            params=query_params).json()
+
+        if 'errcode' in response:
+            raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_WECHAT_CODE)
+
+        return {'wechat_open_id': response.get('openid')}

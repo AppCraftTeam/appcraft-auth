@@ -4,6 +4,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 from dotenv import load_dotenv
+from firebase_admin import initialize_app, credentials
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -186,3 +187,12 @@ SOCIAL_AUTH_PIPELINE = (
 SILENCED_SYSTEM_CHECKS = [
     'urls.W002',
 ]
+
+# FIREBASE
+GOOGLE_APPLICATION_CREDENTIALS = os.path.join(BASE_DIR, 'account.json')
+initialize_app(credential=credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS))
+FIREBASE_AUTHORIZED_SIGN_IN_PROVIDERS = ['phone', 'google.com', 'apple.com', 'facebook.com']
+
+# WECHAT
+WECHAT_APP_ID = "GAGO"
+WECHAT_APP_SECRET = "vacho"

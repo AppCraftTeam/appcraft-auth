@@ -127,10 +127,12 @@ class SmsModel(BaseModel):
     )
 
     @classmethod
-    def create(cls, phone):
+    def create(cls, phone, request=None):
         code = cls.generate_code(6)
         cls.objects.filter(phone=phone, status=cls.Status.SENT).update(status=cls.Status.CANCELED)
-        return cls.objects.create(phone=phone, code=code, key=uuid4())
+        instance = cls.objects.create(phone=phone, code=code, key=uuid4())
+        instance.send_sms()
+        return instance
 
     @classmethod
     def generate_code(cls, chars_long: int = 6):

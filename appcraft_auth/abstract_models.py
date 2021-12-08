@@ -5,7 +5,7 @@ from django.db import models
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from appcraft_auth.managers import AuthUserModelManager
+from appcraft_auth.abstract_managers import AppCraftAuthUserModelManager
 
 
 class BaseModel(models.Model):
@@ -23,6 +23,7 @@ class BaseModel(models.Model):
 
 class AppCraftAuthUserModel(AbstractUser, BaseModel):
     REQUIRED_FIELDS = []
+    USERNAME_FIELD = 'username'
 
     # сделано специально так
     # есть случат, когда через авторизацию по соц-сетям мы не получаем имейл,
@@ -42,7 +43,19 @@ class AppCraftAuthUserModel(AbstractUser, BaseModel):
         unique=True
     )
 
+    apple_user_id = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
+
     vk_id = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    wechat_open_id = models.CharField(
+        max_length=100,
         null=True,
         blank=True
     )
@@ -104,7 +117,7 @@ class AppCraftAuthUserModel(AbstractUser, BaseModel):
     def __str__(self):
         return self.email
 
-    objects = AuthUserModelManager()
+    objects = AppCraftAuthUserModelManager()
 
     class Meta:
         abstract = True

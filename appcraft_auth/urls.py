@@ -4,8 +4,6 @@ from appcraft_auth import views
 from appcraft_auth.views import RefreshTokenAPIView
 
 urlpatterns = [
-    path('test', views.TestAPIView.as_view()),
-
     # email
     path('email', views.GenerateEmailAuthCodeAPIView.as_view()),
     path('email/code', views.AuthenticateByEmailCodeAPIView.as_view()),
@@ -16,6 +14,12 @@ urlpatterns = [
 
     # python-social-auth
     path('vk', views.VkAuthAPIView.as_view()),
+
+    # firebase
+    path('firebase', views.FirebaseAuthAPIView.as_view()),
+
+    # wechat
+    path('wechat', views.WeChatAuthAPIView.as_view()),
 
     # logging out and token refresh
     path('logout', views.LogOutAPIView.as_view()),

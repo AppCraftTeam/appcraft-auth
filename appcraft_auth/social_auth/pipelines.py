@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 def do_auth(backend, *args, **kwargs):
     if backend.name == 'vk-oauth2':
-        user, created = get_user_model().objects.get_or_create_by_vk(kwargs)
+        user, created = get_user_model().objects.get_or_create_by_vk_token(kwargs)
         # todo
         #  при попытке return user, created случается краш
         #  при попытке return user.get_auth_data(created=created) во вьюхе возвращается None почему-то
