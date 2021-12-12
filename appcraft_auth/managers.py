@@ -117,5 +117,3 @@ class AuthLetterModelManager(Manager):
     def max_trials_per_period(self):
         max_trials_per_period = self.email_auth_settings.get('MAX_TRIALS_PER_PERIOD')
         return max_trials_per_period if max_trials_per_period else 4
-
-

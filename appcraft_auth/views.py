@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from social_core.exceptions import AuthTokenRevoked
@@ -9,6 +9,7 @@ from social_django.utils import load_backend, load_strategy
 from appcraft_auth.base.api_views import BaseAuthAPIView, BaseSecretKeyProviderAPIView
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.errors.exceptions import CustomAPIException
+from appcraft_auth.mappers import SocialDataMapper
 from appcraft_auth.models import BlackListedTokenModel, AuthLetterModel, SmsModel
 from appcraft_auth.serializers import RefreshTokenSerializer, EmailSerializer, AuthLetterSerializer, PhoneSerializer, \
     CheckSmsSerializer, VKTokenSerializer, FirebaseTokenSerializer, WechatCodeSerializer
@@ -22,7 +23,7 @@ class GenerateEmailAuthCodeAPIView(BaseSecretKeyProviderAPIView):
 
 class AuthenticateByEmailCodeAPIView(BaseAuthAPIView):
     serializer_class = AuthLetterSerializer
-    method = get_user_model().objects.get_or_create_by_auth_letter_instance
+    user_creation_method = get_user_model().objects.get_or_create_by_auth_letter_instance
 
 
 class SendSMSAPIView(BaseSecretKeyProviderAPIView):
@@ -31,19 +32,21 @@ class SendSMSAPIView(BaseSecretKeyProviderAPIView):
 
 
 class AuthBySMSCodeAPIView(BaseAuthAPIView):
-    permission_classes = [AllowAny]
     serializer_class = CheckSmsSerializer
-    method = get_user_model().objects.get_or_create_by_sms_model
+    user_creation_method = get_user_model().objects.get_or_create_by_sms_model
+    social_mapper_method = SocialDataMapper().sms_aero
 
 
 class FirebaseAuthAPIView(BaseAuthAPIView):
     serializer_class = FirebaseTokenSerializer
-    method = get_user_model().objects.get_or_create_by_firebase_token
+    user_creation_method = get_user_model().objects.get_or_create_by_firebase_token
+    social_mapper_method = SocialDataMapper().firebase
+    is_social_auth = True
 
 
 class WeChatAuthAPIView(BaseAuthAPIView):
     serializer_class = WechatCodeSerializer
-    method = get_user_model().objects.get_or_create_by_wechat_open_id
+    user_creation_method = get_user_model().objects.get_or_create_by_wechat_open_id
 
 
 class VkAuthAPIView(BaseAuthAPIView):
@@ -53,7 +56,7 @@ class VkAuthAPIView(BaseAuthAPIView):
         if serializer.is_valid(raise_exception=True):
             backend = load_backend(load_strategy(request), 'vk-oauth2', 'social/login')
             try:
-                return backend.do_auth(**serializer.validated_data)
+                return backend.do_auth(user=request.user, **serializer.validated_data)
             except AuthTokenRevoked:
                 raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_VK_ACCESS_TOKEN)
 

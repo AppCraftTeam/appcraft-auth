@@ -27,6 +27,11 @@ class JWTModel(BaseModel):
         max_length=255
     )
 
+    social_decoded_token = models.JSONField(
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return self.access_token
 
@@ -180,19 +185,33 @@ class SmsModel(BaseModel):
 class SocialModel(BaseModel):
     user = models.ForeignKey(
         to=settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        blank=True, null=True
+        on_delete=models.CASCADE
     )
 
     class Providers(models.IntegerChoices):
-        GOOGLE = 0
-        APPLE = 1
-        PHONE = 2
-        FACEBOOK = 3
-        WECHAT = 4
+        GOOGLE = 0, 'GOOGLE',
+        APPLE = 1, 'APPLE',
+        PHONE = 2, 'PHONE',
+        FACEBOOK = 3, 'FACEBOOK',
+        INSTAGRAM = 4, 'INSTAGRAM',
+        VK = 5, 'VK',
+        WECHAT = 6, 'WECHAT'
 
     provider = models.PositiveIntegerField(
-        choices=Providers.choices,
+        choices=Providers.choices
+    )
+
+    social_id = models.CharField(
+        max_length=255
+    )
+
+    class Gender(models.IntegerChoices):
+        MAN = 0
+        WOMAN = 1
+        OTHER = 2
+
+    gender = models.PositiveIntegerField(
+        choices=Gender.choices,
         null=True,
         blank=True
     )
@@ -204,12 +223,6 @@ class SocialModel(BaseModel):
     )
 
     last_name = models.CharField(
-        max_length=255,
-        blank=False,
-        null=True
-    )
-
-    middle_name = models.CharField(
         max_length=255,
         blank=False,
         null=True
@@ -233,16 +246,13 @@ class SocialModel(BaseModel):
         null=True
     )
 
-    firebase_id = models.CharField(
-        max_length=255,
-        blank=False,
-        null=True
+    used_for_registration = models.BooleanField(
+        default=False
     )
 
-    used_for_registration = models.BooleanField(
-        default=False,
-        verbose_name='Использовался для регистрации'
-    )
+    def set_used_for_registration(self, created=False):
+        self.used_for_registration = created
+        self.save()
 
     def __str__(self):
         return f'{self.provider}'
@@ -250,4 +260,4 @@ class SocialModel(BaseModel):
     class Meta:
         db_table = 'appcraft_auth__socials'
         verbose_name = 'Способ авторизации пользователя'
-        verbose_name_plural = 'Способы авторизаций пользователей'
+        verbose_name_plural = 'Способы авторизации пользователей'

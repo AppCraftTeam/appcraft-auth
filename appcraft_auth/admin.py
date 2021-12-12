@@ -20,4 +20,4 @@ if settings.DEBUG:
 
     @admin.register(SocialModel)
     class SocialModelAdmin(admin.ModelAdmin):
-        list_display = ['id', 'user', 'provider']
+        list_display = ['id', 'user', 'social_id', 'provider']

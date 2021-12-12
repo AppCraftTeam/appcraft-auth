@@ -85,7 +85,6 @@ class FirebaseTokenSerializer(serializers.Serializer):
         except InvalidIdTokenError as e:
             print(e)
             raise self.invalid_firebase_token
-
         return decoded_token
 
     def validate(self, attrs):

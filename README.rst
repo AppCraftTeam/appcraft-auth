@@ -2,7 +2,14 @@
 appcraft_auth
 =====
 
-Appcraft Auth is a Django app to handle all commune use cases for social auth.
+Appcraft Auth is a Django app to handle commune use case for user authentications.
+Auth methods provided by appcarft_auth::
+-firebase auth (phone, facebook, google, apple, instagram
+(пока что без фб и инсты, допилим как будет пример декодированного токена))
+-vk
+-email
+-phone (sms aero)
+-wechat
 
 Quick start
 -----------
@@ -78,6 +85,8 @@ the email backend like this::
         EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
         EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
+Your template should contain the "code" variable.
+
 Then in settings.py file specify APPCRAFT_AUTH_EMAIL_SETTINGS like this::
 
         APPCRAFT_AUTH_EMAIL_SETTINGS = {
@@ -88,12 +97,60 @@ Then in settings.py file specify APPCRAFT_AUTH_EMAIL_SETTINGS like this::
             'MAX_TRIALS_PERIOD' : timedelta(set here interval up to you) (e.g timedelta(days=1)) (optional),
             'MAX_TRIALS_PER_PERIOD' : e.g. 6 (optional)
         }
-Your template should contain the "code" variable.
 
 Аlso add "proxy_set_header X-Real-IP $remote_addr;" in your nginx configuration,
 in order to restrict abuses of getting codes based from the same ip address for different emails.
 
+8. If you use authentication based on firebase token, becides firebase admin settings, also set
+variable::
 
+        FIREBASE_AUTHORIZED_SIGN_IN_PROVIDERS = tuple or list e.g['phone', 'google.com', 'apple.com', 'facebook.com']
 
-8. Run ``python manage.py migrate`` to create the appcraft_auth models.
+If any provider is not set, you will get un error
+
+9. If you want to use authentication by VK access token, set follwing settings::
+
+        INSTALLED_APPS = [
+            ...
+            'social_django',
+        ]
+
+        SOCIAL_AUTH_JSONFIELD_ENABLED = True
+
+        SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email', 'phone']
+        SOCIAL_AUTH_EXTRA_DATA = ['sex', 'email', 'phone']
+
+        LOGIN_URL = 'login'
+        LOGIN_REDIRECT_URL = 'checkout'
+
+        AUTHENTICATION_BACKENDS = (
+            'social_core.backends.vk.VKOAuth2',
+            'django.contrib.auth.backends.ModelBackend',
+        )
+
+        API_VERSION = '5.81'
+
+        SOCIAL_AUTH_PIPELINE = (
+            'social_core.pipeline.social_auth.social_details',
+            'social_core.pipeline.social_auth.social_uid',
+            'social_core.pipeline.social_auth.social_user',
+            # custom pipelines
+            'appcraft_auth.pipelines.do_auth',
+        )
+
+        SILENCED_SYSTEM_CHECKS = [
+            'urls.W002',
+        ]
+
+11. For sms aero auth activation set following settings::
+
+        SMS_AERO_EMAIL = os.getenv('SMS_AERO_EMAIL')
+        SMS_AERO_API_KEY = os.getenv('SMS_AERO_API_KEY')
+
+12. For wechat auth activation set followin settings::
+
+        WECHAT_APP_ID = os.getenv('WECHAT_APP_ID')
+        WECHAT_APP_SECRET = os.getenv('WECHAT_APP_SECRET')
+
+13. Run ``python manage.py migrate`` to create the appcraft_auth models.
 

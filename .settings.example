@@ -181,7 +181,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
     # custom pipelines
-    'appcraft_auth.social_auth.pipelines.do_auth',
+    'appcraft_auth.pipelines.do_auth',
 )
 
 SILENCED_SYSTEM_CHECKS = [
@@ -194,5 +194,5 @@ initialize_app(credential=credentials.Certificate(GOOGLE_APPLICATION_CREDENTIALS
 FIREBASE_AUTHORIZED_SIGN_IN_PROVIDERS = ['phone', 'google.com', 'apple.com', 'facebook.com']
 
 # WECHAT
-WECHAT_APP_ID = "GAGO"
-WECHAT_APP_SECRET = "vacho"
+WECHAT_APP_ID = os.getenv('WECHAT_APP_ID')
+WECHAT_APP_SECRET = os.getenv('WECHAT_APP_SECRET')

@@ -1,11 +1,9 @@
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import UserManager
-from rest_framework.exceptions import NotFound
 
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.errors.exceptions import CustomAPIException
-from appcraft_auth.social_auth.utils import map_vk_gender
 
 
 class AppCraftAuthUserModelManager(UserManager):
@@ -41,7 +39,6 @@ class AppCraftAuthUserModelManager(UserManager):
         email = social_data['details']['email']
 
         defaults = {
-            'gender': map_vk_gender(social_data['response'].get('sex'), self.model.Gender),
             'first_name': social_data.get('response').get('first_name'),
             'last_name': social_data.get('response').get('last_name')
         }
@@ -70,12 +67,8 @@ class AppCraftAuthUserModelManager(UserManager):
         return method(decoded_firebase_token=decoded_firebase_token)
 
     def update_or_create_by_firebase_apple_auth(self, decoded_firebase_token: dict):
-        apple_user_id = decoded_firebase_token.get('user_id')
         email = decoded_firebase_token.get('email')
-        if email:
-            return self.update_or_create(email=email, defaults={'apple_user_id': apple_user_id})
-        else:
-            return self.get_or_create(apple_user_id=apple_user_id)
+        return self.update_or_create(email=email)
 
     def update_or_create_by_firebase_google_auth(self, decoded_firebase_token: dict):
         email = decoded_firebase_token.get('firebase').get('identities').get('email')[0]

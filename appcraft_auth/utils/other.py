@@ -1,4 +1,5 @@
 import re
+from functools import reduce
 
 
 def chained_get(obj, *args, default=None):
@@ -10,6 +11,12 @@ def chained_get(obj, *args, default=None):
         if isinstance(o, object) and isinstance(attr, str):
             return getattr(o, attr, default)
         return None
+
+    try:
+        result = reduce(get_value, args, obj)
+        return result
+    except Exception as e:
+        return default
 
 
 def nonefy(value, condition=True):
