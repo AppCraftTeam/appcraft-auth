@@ -237,3 +237,5 @@ app_users
 account.json
 
 config
+
+manage.py
