@@ -1,6 +1,8 @@
 import re
 from functools import reduce
 
+from django.conf import settings
+
 
 def chained_get(obj, *args, default=None):
     def get_value(o, attr):
@@ -29,3 +31,10 @@ def has_latin(text: str = None):
     if text and isinstance(text, str):
         return bool(re.search('[a-zA-Z]', text))
     return False
+
+
+def get_code_max_length():
+    try:
+        return settings.APPCRAFT_AUTH_EMAIL_SETTINGS.get('CODE_LENGTH', 4)
+    except AttributeError:
+        return 4

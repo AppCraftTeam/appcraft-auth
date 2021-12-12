@@ -11,12 +11,13 @@ from appcraft_auth.abstract_models import BaseModel
 from appcraft_auth.errors.error_codes import AuthRelatedErrorCodes
 from appcraft_auth.errors.exceptions import CustomAPIException
 from appcraft_auth.managers import AuthLetterModelManager
+from appcraft_auth.utils.other import get_code_max_length
 
 
 class JWTModel(BaseModel):
     user = models.ForeignKey(
         to=settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
 
     access_token = models.CharField(
@@ -56,10 +57,8 @@ class AuthLetterModel(BaseModel):
         verbose_name='Отправлено на'
     )
 
-    code_max_length = settings.APPCRAFT_AUTH_EMAIL_SETTINGS.get('CODE_LENGTH')
-
     code = models.CharField(
-        max_length=code_max_length,
+        max_length=get_code_max_length(),
         verbose_name='Сгенерированный код'
     )
 
