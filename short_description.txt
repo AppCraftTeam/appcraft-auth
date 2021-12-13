@@ -1,1 +1,6 @@
-Appcraft Auth is a Django app to handle all commune use cases for social auth.
+Appcraft Auth is a Django app to handle authentication commune use cases of AppCraft INC, such:
+-Firebase (phone, facebook, google, apple, instagram) (fb and insta TODO)
+-Vk
+-Email
+-Phone (Sms Aero)
+-Wechat

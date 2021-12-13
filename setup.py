@@ -8,7 +8,7 @@ def long_description():
 
 
 setup(
-    description='just text',
+    description='Appcraft',
     long_description=long_description(),
     long_description_content_type='text/markdown',
     description_content_type='text/markdown'

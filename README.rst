@@ -1,170 +1,94 @@
-=====
 appcraft_auth
 =====
 
-Appcraft Auth is a Django app to handle commune use case for user authentications.
-Auth methods provided by appcarft_auth::
-
-        -firebase auth (phone, facebook, google, apple, instagram
-        (пока что без фб и инсты, допилим как будет пример декодированного токена))
-        -vk
-        -email
-        -phone (sms aero)
-        -wechat
-
-
-## Некоторые фичи проекта (пока что для нас по русски опишу так быстрее будет)::
-
-    -Предусмотрен фукнционал логаута с контроллем на серверной части
-    -Ограничена возможность получения бесконечного количества аксес-токенов на базе одного и того же социального токена.
-    Например, если вы 1 раз получили аксес токен по эндпоинту /firebase, деляя тот же запрос с тем же файрбейз-токен вам
-    вернет не новый аксес токен, а тот же самый, который уже был получен (чтоб не плодить кучу неиспользуемых но валидных аксес токенов,
-    летающих в космосе)
-    -Предусмотрена инвалидация старого аксес токена при получении нового по одному и тому же рефреш токену
-    -Предусмотрена возможность привязки данных из соц-сетей. Механика работы - если запроc на авторизацию через соц-сеть
-    делает анонимус, то создается пользователь, если нет - просто привязываются его данные из соц-сети к пользователю
-    -В остальном вроде как все стандартно, без особых отличый от наших юз-кейсов
 
 Quick start
------------
-
-## Your settings.AUTH_USER_MODEL should be inherited from AppCraftAuthUserModel
-
-1. Add "appcraft_auth" to your INSTALLED_APPS setting like this::
-
-    INSTALLED_APPS = [
-        ...
-        'appcraft_auth',
-    ]
 
 
+1. Run ``pip install appcraft-auth``
 
-2. Add "appcraft_auth.middleware.BlacklistedTokensMiddleware" in the end of your
-middleware settings likes this::
+2. appcraft_auth app is based on restframework-simplejwt package, so you also have to specify authentication classes and
+other settings related to it https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html
 
-     MIDDLEWARE = [
-        ...
-        'appcraft_auth.middleware.BlacklistedTokensMiddleware'
-    ]
+3. For app to work properly - your settings.AUTH_USER_MODEL should be inherited from AppCraftAuthUserModel
 
-
-3. Include the appcraft_auth URLconf in your project urls.py like this::
-
-    urlpatterns = [
-        ...
-        path('api/appcraft_auth/', include('appcraft_auth.urls'))
-        ...
-    ]
-
-4. In settings.py in REST_FRAMEWORK config specify authentication classes like this::
-
-      REST_FRAMEWORK = {
-            ...
-            'DEFAULT_AUTHENTICATION_CLASSES': (
-                'rest_framework_simplejwt.authentication.JWTAuthentication',
-            )
-            ...
-      }
-
-5. In settings.py specify simple jwt settings at least like this::
-
-    SIMPLE_JWT = {
-        'ACCESS_TOKEN_LIFETIME': time_up_to_you,
-        'REFRESH_TOKEN_LIFETIME': time_up_to_you,
-        'SIGNING_KEY': your_project_secret_key,
-        'AUTH_HEADER_TYPES': list_or_tuple_of_types
-    }
-
-
-6. In settings.py specify celery and celery beat configuration. Add in your celery beat schedule
-appcraft_auth tasks like this::
-
-    CELERY_BEAT_SCHEDULE = {
-    ...
-        'clear_outdated_tokens': {
-            'task': 'appcraft_auth.tasks.clear_outdated_tokens',
-            'schedule': crontab(minute='0', hour='0')
-        },
-    ...
-    }
-
-
-
-7. If you want need to use authentication based on email and sent code, first specify
-the email backend like this::
-
-        EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-        EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', True)
-        EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', False)
-        EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-        EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
-        EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-        EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-
-8. Your template should contain the "code" variable.
-
-9. Then in settings.py file specify APPCRAFT_AUTH_EMAIL_SETTINGS like this::
-
-        APPCRAFT_AUTH_EMAIL_SETTINGS = {
-            'CODE_LENGTH': e.g. 6 (optional)
-            'AUTH_LETTER_SUBJECT': 'subject up to you',
-            'TEMPLATE_NAME' : 'html_template_name_to_be_sent' (optional)
-            'REPEAT_INTERVAL' : timedelta(set here interval up to you) (e.g timedelta(minutes=1)) (optional),
-            'MAX_TRIALS_PERIOD' : timedelta(set here interval up to you) (e.g timedelta(days=1)) (optional),
-            'MAX_TRIALS_PER_PERIOD' : e.g. 6 (optional)
-        }
-
-10 . Аlso add "proxy_set_header X-Real-IP $remote_addr;" in your nginx configuration,
-in order to restrict abuses of getting codes based from the same ip address for different emails.
-
-11. If you use authentication based on firebase token, becides firebase admin settings, also set
-variable::
-
-        FIREBASE_AUTHORIZED_SIGN_IN_PROVIDERS = tuple or list e.g['phone', 'google.com', 'apple.com', 'facebook.com']
-
-12. If you want to use authentication by VK access token, set follwing settings::
+4. Add "appcraft_auth" to your INSTALLED_APPS::
 
         INSTALLED_APPS = [
             ...
-            'social_django',
+            'appcraft_auth',
+            ...
         ]
 
-        SOCIAL_AUTH_JSONFIELD_ENABLED = True
 
-        SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email', 'phone']
-        SOCIAL_AUTH_EXTRA_DATA = ['sex', 'email', 'phone']
+5. Add "appcraft_auth.middleware.BlacklistedTokensMiddleware" in the end of your
+middleware settings::
 
-        LOGIN_URL = 'login'
-        LOGIN_REDIRECT_URL = 'checkout'
+         MIDDLEWARE = [
+            ...
+            'appcraft_auth.middleware.BlacklistedTokensMiddleware'
+        ]
 
-        AUTHENTICATION_BACKENDS = (
-            'social_core.backends.vk.VKOAuth2',
-            'django.contrib.auth.backends.ModelBackend',
-        )
 
-        API_VERSION = '5.81'
+6. Include the appcraft_auth URLconf in your project urls.py::
+
+        urlpatterns = [
+            ...
+            path('api/appcraft_auth/', include('appcraft_auth.urls'))
+            ...
+        ]
+
+7. Run ``python manage.py migrate`` to create the appcraft_auth models.
+
+8. For authentication based on firebase token,  appcraft_auth provides opportunity to set
+a sequence of authorised sign in providers. Thus authentication with firebase token provided from not specified sign in provider
+will throw an exception. Set in settings.py a sequence of authorized providers::
+
+        FIREBASE_AUTHORIZED_SIGN_IN_PROVIDERS = tuple or list e.g['phone', 'google.com', 'apple.com', 'facebook.com']
+
+
+9. If you want to use authentication based on unique code being sent via email, first in settings.py
+specify the email backend : https://docs.djangoproject.com/en/4.0/topics/email/#smtp-backend.
+
+Also add "proxy_set_header X-Real-IP $remote_addr;" in the nginx configuration,
+in order to restrict abuses of getting unique codes by request made form the same ip address for different emails.
+
+Moreover if you want the email to be sent as an html, create it and be sure you have included the "code" variable there.
+
+Then specify appcraft_auth email settings like this::
+
+        APPCRAFT_AUTH_EMAIL_SETTINGS = {
+            'CODE_LENGTH': integer describing the unique code length | optional
+            'AUTH_LETTER_SUBJECT': string to be used as email subject | optional
+            'TEMPLATE_NAME' : string | html_template_name_to_be_sent | optional
+            'REPEAT_INTERVAL' : timedelta | the interval to wait before making request to get code | optional
+            'MAX_TRIALS_PERIOD' : timedelta | period of maximal trials to get unique code for the same email | optional
+            'MAX_TRIALS_PER_PERIOD' : integer | max trials limit to get unique code for the same email | optional
+        }
+
+
+
+
+10. If you want to use authentication based on VK access token, 'social_django' in INSTALLED_APPS
+(the package will be already provided with appcraft_auth other requirements)
+After having specify all settings related to that package https://pypi.org/project/social-auth-app-django ,
+include in social auth pipelines  appcraft_auth pipelines::
 
         SOCIAL_AUTH_PIPELINE = (
-            'social_core.pipeline.social_auth.social_details',
-            'social_core.pipeline.social_auth.social_uid',
-            'social_core.pipeline.social_auth.social_user',
-            # custom pipelines
+            ...
             'appcraft_auth.pipelines.do_auth',
         )
 
-        SILENCED_SYSTEM_CHECKS = [
-            'urls.W002',
-        ]
-
-13. For sms aero auth activation set following settings::
+11. For authentication based on sms code sms aero settings::
 
         SMS_AERO_EMAIL = os.getenv('SMS_AERO_EMAIL')
         SMS_AERO_API_KEY = os.getenv('SMS_AERO_API_KEY')
 
-14. For wechat auth activation set followin settings::
+12. For wechat auth activation set following settings::
 
         WECHAT_APP_ID = os.getenv('WECHAT_APP_ID')
         WECHAT_APP_SECRET = os.getenv('WECHAT_APP_SECRET')
 
-15. Run ``python manage.py migrate`` to create the appcraft_auth models.
 
+13. appcraft_auth app keeps all tokens in db. If you want to remove them periodically, register appcraft_auth.tasks.clear_outdated_tokens
+function and include in celery beat schedule. This will remove all token instances based on simple jwt access token lifetime setting.
