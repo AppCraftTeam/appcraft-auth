@@ -28,7 +28,7 @@ Auth methods provided by appcarft_auth::
 Quick start
 -----------
 
-## Your settings.AUTH_USER_MODEL should be inherited from AppCraft
+## Your settings.AUTH_USER_MODEL should be inherited from AppCraftAuthUserModel
 
 1. Add "appcraft_auth" to your INSTALLED_APPS setting like this::
 
