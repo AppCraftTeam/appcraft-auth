@@ -5,7 +5,7 @@ appcraft_auth
 Quick start
 
 
-1. Run ``pip install appcraft-auth``
+1. Run ``pip install -i https://test.pypi.org/pypi/ --extra-index-url https://pypi.org/simple appcraft-auth``
 
 2. appcraft_auth app is based on restframework-simplejwt package, so you also have to specify authentication classes and
 other settings related to it https://django-rest-framework-simplejwt.readthedocs.io/en/latest/getting_started.html
