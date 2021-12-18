@@ -12,7 +12,8 @@ class BaseModel(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid4,
-        unique=True
+        unique=True,
+        editable=False
     )
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
