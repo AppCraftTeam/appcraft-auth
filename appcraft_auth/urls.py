@@ -13,7 +13,7 @@ urlpatterns = [
     path('sms', views.AuthBySMSCodeAPIView.as_view()),
 
     # python-social-auth
-    path('vk', views.VkAuthAPIView.as_view()),
+    path('vk', views.VkAuthAPIView.as_view()), 
 
     # firebase
     path('firebase', views.FirebaseAuthAPIView.as_view()),
