@@ -22,3 +22,5 @@ class AuthRelatedErrorCodes(IntEnum):
     UNAUTHORIZED_AUTH_PROVIDER = 563
 
     INVALID_WECHAT_CODE = 564
+
+    INVALID_APPLE_ID_TOKEN = 565

@@ -69,7 +69,7 @@ Then specify appcraft_auth email settings like this::
 
 
 
-10. If you want to use authentication based on VK access token, 'social_django' in INSTALLED_APPS
+10. If you want to use authentication based on VK access token, add 'social_django' in INSTALLED_APPS
 (the package will be already provided with appcraft_auth other requirements)
 After having specify all settings related to that package https://pypi.org/project/social-auth-app-django ,
 include in social auth pipelines  appcraft_auth pipelines::
@@ -92,3 +92,36 @@ include in social auth pipelines  appcraft_auth pipelines::
 
 13. appcraft_auth app keeps all tokens in db. If you want to remove them periodically, register appcraft_auth.tasks.clear_outdated_tokens
 function and include in celery beat schedule. This will remove all token instances based on simple jwt access token lifetime setting.
+
+14. if you want to use only apple socila auth first run::
+
+        pip install django-allauth
+        pip install dj-rest-auth
+
+then update your installed apps::
+    INSTALLED_APPS = [
+            ...
+            'allauth',
+            'allauth.account',
+            'allauth.socialaccount',
+            'allauth.socialaccount.providers.apple',
+            ...
+        ]
+
+and then in settings.py add follwing config::
+
+        SOCIALACCOUNT_PROVIDERS = {
+            "apple": {
+                "APP": {
+                    # Your service identifier.
+                    "client_id": os.getenv('APPLE_CLIENT_ID'),
+
+                    "key": os.getenv('APPLE_KEY_ID'),
+
+                    "certificate_key": """-----BEGIN PRIVATE KEY-----
+                                        ...
+                                        -----END PRIVATE KEY-----"""
+                }
+            }
+        }
+

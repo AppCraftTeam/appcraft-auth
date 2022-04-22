@@ -18,6 +18,10 @@ urlpatterns = [
     # firebase
     path('firebase', views.FirebaseAuthAPIView.as_view()),
 
+    # apple auth
+    # https://appcraft-group.slack.com/archives/C01V8C1913J/p1643879910463619
+    path('apple', views.AppleAuthAPIView.as_view()),
+
     # wechat
     path('wechat', views.WeChatAuthAPIView.as_view()),
 

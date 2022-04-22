@@ -31,6 +31,13 @@ class SocialDataMapper:
 
         return entity
 
+    def apple(self, apple_decoded_token):
+        entity = SocialEntity()
+        entity.social_id = chained_get(apple_decoded_token, '')  # todo print parsed token and see how to get id
+        entity.provider = 'apple.com'
+        entity.email = chained_get(apple_decoded_token, 'email')
+        return entity
+
     def vk(self, vk_decoded_token):
         entity = SocialEntity()
         entity.social_id = chained_get(vk_decoded_token, 'response', 'id')

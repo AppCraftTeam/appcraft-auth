@@ -1,7 +1,9 @@
 import string
 
 import requests
+from dj_rest_auth.registration.serializers import SocialLoginSerializer
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _, gettext_lazy as _
 from firebase_admin import auth as firebase_auth
 from firebase_admin.auth import InvalidIdTokenError
 from rest_framework import serializers
@@ -92,6 +94,28 @@ class FirebaseTokenSerializer(serializers.Serializer):
         return {
             'decoded_firebase_token': attrs.get('firebase_token')
         }
+
+
+# https://stackoverflow.com/questions/64850805/apple-login-in-django-rest-framework-with-allauth-and-rest-auth
+class CustomSocialLoginSerializer(SocialLoginSerializer):
+    id_token = serializers.CharField()
+
+    def validate(self, attrs):
+        view = self.context.get('view')
+        request = self._get_request()
+
+        if not view:
+            raise serializers.ValidationError(
+                _('View is not defined, pass it as a context variable'),
+            )
+
+        adapter_class = getattr(view, 'adapter_class', None)
+        if not adapter_class:
+            raise serializers.ValidationError(_('Define adapter_class in view'))
+
+        adapter = adapter_class(request)
+        tokens_to_parse = {'id_token': attrs.get('id_token')}
+        return adapter.parse_token(tokens_to_parse)
 
 
 class WechatCodeSerializer(serializers.Serializer):

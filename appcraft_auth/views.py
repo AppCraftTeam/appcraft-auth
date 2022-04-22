@@ -12,7 +12,7 @@ from appcraft_auth.errors.exceptions import CustomAPIException
 from appcraft_auth.mappers import SocialDataMapper
 from appcraft_auth.models import BlackListedTokenModel, AuthLetterModel, SmsModel
 from appcraft_auth.serializers import RefreshTokenSerializer, EmailSerializer, AuthLetterSerializer, PhoneSerializer, \
-    CheckSmsSerializer, VKTokenSerializer, FirebaseTokenSerializer, WechatCodeSerializer
+    CheckSmsSerializer, VKTokenSerializer, FirebaseTokenSerializer, WechatCodeSerializer, CustomSocialLoginSerializer
 from appcraft_auth.utils.request_utils import get_access_token
 
 
@@ -41,6 +41,13 @@ class FirebaseAuthAPIView(BaseAuthAPIView):
     serializer_class = FirebaseTokenSerializer
     user_creation_method = get_user_model().objects.get_or_create_by_firebase_token
     social_mapper_method = SocialDataMapper().firebase
+    is_social_auth = True
+
+
+class AppleAuthAPIView(BaseAuthAPIView):
+    serializer_class = CustomSocialLoginSerializer
+    user_creation_method = get_user_model().objects.get_or_create_by_apple_token
+    social_mapper_method = SocialDataMapper().apple
     is_social_auth = True
 
 

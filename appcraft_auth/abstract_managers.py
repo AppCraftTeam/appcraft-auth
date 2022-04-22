@@ -87,3 +87,10 @@ class AppCraftAuthUserModelManager(UserManager):
 
     def get_or_create_by_wechat_open_id(self, wechat_open_id):
         return self.get_or_create(wechat_open_id=wechat_open_id)
+
+    def get_or_create_by_apple_token(self, apple_decoded_token: dict):
+        email = apple_decoded_token.get('email')
+        if email:
+            return self.get_or_create(email=email)
+        else:
+            raise CustomAPIException(error=AuthRelatedErrorCodes.INVALID_APPLE_ID_TOKEN)
