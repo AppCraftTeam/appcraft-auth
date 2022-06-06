@@ -20,13 +20,9 @@ class JWTModel(BaseModel):
         on_delete=models.CASCADE,
     )
 
-    access_token = models.CharField(
-        max_length=255
-    )
+    access_token = models.TextField()
 
-    refresh_token = models.CharField(
-        max_length=255
-    )
+    refresh_token = models.TextField()
 
     social_decoded_token = models.JSONField(
         null=True,
@@ -41,9 +37,7 @@ class JWTModel(BaseModel):
 
 
 class BlackListedTokenModel(BaseModel):
-    access_token = models.CharField(
-        max_length=255
-    )
+    access_token = models.TextField()
 
     def __str__(self):
         return self.access_token
